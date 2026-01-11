@@ -2,6 +2,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import exceptions.InvalidMenuChoiceException;
+import exceptions.InvalidStringInputException;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -49,25 +50,78 @@ public class TaskManager {
         while (true) {
             showMenu();
 
-            try {
-                int choice = Integer.parseInt(scanner.nextLine());
+            int choice = enterInt("Выберите действие: ", 1, 8);
 
-                switch (choice) {
-                    case 1 -> displayTasks();
-                    case 2 -> addTask();
-                    case 3 -> changeStatus();
-                    case 4 -> changeDescription();
-                    case 5 -> deleteTask();
-                    case 6 -> sortTasks();
-                    case 7 -> filterTasks();
-                    case 8 -> {
-                        saveTasks();
-                        return;
-                    }
-                    default -> System.out.println("Введите число от 1 до 8.");
+            switch (choice) {
+                case 1 -> displayTasks();
+                case 2 -> addTask();
+                case 3 -> changeStatus();
+                case 4 -> changeDescription();
+                case 5 -> deleteTask();
+                case 6 -> sortTasks();
+                case 7 -> filterTasks();
+                case 8 -> {
+                    saveTasks();
+                    return;
                 }
+            }
+        }
+    }
+
+    private String enterString(String message) {
+        while (true) {
+            try {
+                System.out.println(message);
+                String input = scanner.nextLine().strip();
+                if (input.isEmpty()) {
+                    throw new InvalidStringInputException("Ошибка: вы ничего не ввели!");
+                }
+                return input;
+            } catch (InvalidStringInputException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    private Task.Priority enterPriority() {
+        while (true) {
+            try {
+                System.out.print("Приоритет (низкий/средний/высокий): ");
+                String input = scanner.nextLine().toUpperCase();
+                return Task.Priority.valueOf(input);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Ошибка: допустимые значения: НИЗКИЙ, СРЕДНИЙ, ВЫСОКИЙ");
+            }
+        }
+    }
+
+    private Task.Status enterStatus() {
+        while (true) {
+            try {
+                System.out.print("Статус (new/in_progress/done): ");
+                String input = scanner.nextLine().toUpperCase();
+                return Task.Status.valueOf(input);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Ошибка: допустимые значения: NEW, IN_PROGRESS, DONE");
+            }
+        }
+    }
+
+    private int enterInt(String message, int min, int max) {
+        while (true) {
+            try {
+                System.out.print(message);
+                int value = Integer.parseInt(scanner.nextLine());
+
+                if (value < min || value > max) {
+                    throw new InvalidMenuChoiceException("Ошибка: число должно быть от " + min + " до " + max + "!\n");
+                }
+                return value;
+
+            } catch (InvalidMenuChoiceException e) {
+                System.out.println(e.getMessage());
             } catch (NumberFormatException e) {
-                System.out.println("Введите число от 1 до 8.");
+                System.out.println("Ошибка: введите число!\n");
             }
         }
     }
@@ -150,7 +204,6 @@ public class TaskManager {
             }
 
             tasks.add(new Task(title, desc, date, priority));
-            tasks.sort((a,b) -> b.getPriority().ordinal() - a.getPriority().ordinal());
             saveTasks();
             System.out.println("Задача добавлена!");
 
@@ -278,31 +331,43 @@ public class TaskManager {
         System.out.println("\t1. По приоритету " +
                 "\n\t2. По статусу " +
                 "\n\t3. Просроченные");
-        try {
-            int choice = Integer.parseInt(scanner.nextLine());
-            List<Task> filtered = switch (choice) {
-                case 1 -> {
-                    System.out.print("Приоритет (низкий/средний/высокий): ");
-                    Task.Priority p = Task.Priority.valueOf(scanner.nextLine().toUpperCase());
-                    yield tasks.stream()
-                            .filter(t -> t.getPriority() == p)
+        boolean filterChosen = false;
+        while (!filterChosen) {
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+                List<Task> filtered = switch (choice) {
+                    case 1 -> {
+                        System.out.print("Приоритет (низкий/средний/высокий): ");
+                        Task.Priority p = Task.Priority.valueOf(scanner.nextLine().toUpperCase());
+                        yield tasks.stream()
+                                .filter(t -> t.getPriority() == p)
+                                .collect(Collectors.toList());
+                    }
+                    case 2 -> {
+                        System.out.print("Статус (new/in_progress/done): ");
+                        Task.Status s = Task.Status.valueOf(scanner.nextLine().toUpperCase());
+                        yield tasks.stream()
+                                .filter(t -> t.getStatus() == s)
+                                .collect(Collectors.toList());
+                    }
+                    case 3 -> tasks.stream()
+                            .filter(Task::isOverdue)
                             .collect(Collectors.toList());
-                }
-                case 2 -> {
-                    System.out.print("Статус (new/in_progress/done): ");
-                    Task.Status s = Task.Status.valueOf(scanner.nextLine().toUpperCase());
-                    yield tasks.stream()
-                            .filter(t -> t.getStatus() == s)
-                            .collect(Collectors.toList());
-                }
-                case 3 -> tasks.stream()
-                        .filter(Task::isOverdue)
-                        .collect(Collectors.toList());
-                default -> new ArrayList<>();
-            };
-            displayTasks(filtered);
-        } catch (Exception e) {
-            System.out.println("Ошибка: " + e.getMessage());
+                    default -> throw new InvalidMenuChoiceException(
+                            "Ошибка: номер фильтра должен быть от 1 до 3!");
+                };
+
+                displayTasks(filtered.stream()
+                        .sorted(currentComparator)
+                        .toList());
+                filterChosen = true;
+
+            } catch (NumberFormatException e) {
+                System.out.println("Ошибка: введите число!");
+            } catch (InvalidMenuChoiceException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
+
 }
