@@ -76,12 +76,12 @@ public class TaskManager {
                 LocalDate date = LocalDate.parse(input, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
 
                 if (date.isBefore(LocalDate.now())) {
-                    throw new IllegalArgumentException("Ошибка: дата в прошлом!");
+                    throw new IllegalArgumentException("Ошибка: дата в прошлом!\n");
                 }
                 return date;
 
             } catch (DateTimeParseException e) {
-                System.out.println("Ошибка: неверный формат даты! Используйте дд.мм.гггг");
+                System.out.println("Ошибка: неверный формат даты! Используйте дд.мм.гггг\n");
             } catch (IllegalArgumentException e) {
                 System.out.println(e.getMessage());
             }
@@ -94,7 +94,7 @@ public class TaskManager {
                 System.out.println(message);
                 String input = scanner.nextLine().strip();
                 if (input.isEmpty()) {
-                    throw new InvalidStringInputException("Ошибка: вы ничего не ввели!");
+                    throw new InvalidStringInputException("Ошибка: вы ничего не ввели!\n");
                 }
                 return input;
 
@@ -107,11 +107,11 @@ public class TaskManager {
     private Task.Priority enterPriority() {
         while (true) {
             try {
-                System.out.print("Приоритет (низкий/средний/высокий): ");
+                System.out.print("Введите приоритет (низкий/средний/высокий): ");
                 String input = scanner.nextLine().toUpperCase();
                 return Task.Priority.valueOf(input);
             } catch (IllegalArgumentException e) {
-                System.out.println("Ошибка: допустимые значения: НИЗКИЙ, СРЕДНИЙ, ВЫСОКИЙ");
+                System.out.println("Ошибка: допустимые значения: НИЗКИЙ, СРЕДНИЙ, ВЫСОКИЙ\n");
             }
         }
     }
@@ -119,11 +119,11 @@ public class TaskManager {
     private Task.Status enterStatus() {
         while (true) {
             try {
-                System.out.print("Статус (new/in_progress/done): ");
+                System.out.print("Введите статус (new/in_progress/done): ");
                 String input = scanner.nextLine().toUpperCase();
                 return Task.Status.valueOf(input);
             } catch (IllegalArgumentException e) {
-                System.out.println("Ошибка: допустимые значения: NEW, IN_PROGRESS, DONE");
+                System.out.println("Ошибка: допустимые значения: NEW, IN_PROGRESS, DONE\n");
             }
         }
     }
@@ -194,49 +194,13 @@ public class TaskManager {
         String title = enterString("Введите название задачи: ");
         String desc = enterString("Введите описание задачи: ");
 
+        LocalDate date = enterDate("Введите дату завершения задачи: ");
 
-//        try {
-//            System.out.print("Название: ");
-//            String title = scanner.nextLine();
-//
-//            System.out.print("Описание: ");
-//            String desc = scanner.nextLine();
-//
-//            LocalDate date;
-//            while (true) {
-//                System.out.print("Дата завершения (дд.мм.гггг): ");
-//                String input = scanner.nextLine();
-//                try {
-//                    date = LocalDate.parse(input, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-//                    if (date.isBefore(LocalDate.now())) {
-//                        System.out.println("Дата в прошлом! Повторите.");
-//                        continue;
-//                    }
-//                    break;
-//                } catch (DateTimeParseException e) {
-//                    System.out.println("Неверный формат!");
-//                }
-//            }
-//
-//            Task.Priority priority;
-//            while (true) {
-//                System.out.print("Приоритет (низкий/средний/высокий): ");
-//                String input = scanner.nextLine().toUpperCase();
-//                try {
-//                    priority = Task.Priority.valueOf(input);
-//                    break;
-//                } catch (IllegalArgumentException e) {
-//                    System.out.println("Неверный приоритет!");
-//                }
-//            }
-//
-//            tasks.add(new Task(title, desc, date, priority));
-//            saveTasks();
-//            System.out.println("Задача добавлена!");
-//
-//        } catch (Exception e) {
-//            System.out.println("Ошибка: " + e.getMessage());
-//        }
+        Task.Priority priority = enterPriority();
+
+        tasks.add(new Task(title, desc, date, priority));
+        saveTasks();
+        System.out.println("Задача добавлена!");
     }
 
     private void changeStatus() {
