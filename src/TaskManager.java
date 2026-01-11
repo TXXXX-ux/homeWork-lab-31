@@ -68,6 +68,26 @@ public class TaskManager {
         }
     }
 
+    private LocalDate enterDate(String message) {
+        while (true) {
+            try {
+                System.out.print(message);
+                String input = scanner.nextLine();
+                LocalDate date = LocalDate.parse(input, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+
+                if (date.isBefore(LocalDate.now())) {
+                    throw new IllegalArgumentException("Ошибка: дата в прошлом!");
+                }
+                return date;
+
+            } catch (DateTimeParseException e) {
+                System.out.println("Ошибка: неверный формат даты! Используйте дд.мм.гггг");
+            } catch (IllegalArgumentException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
     private String enterString(String message) {
         while (true) {
             try {
@@ -77,6 +97,7 @@ public class TaskManager {
                     throw new InvalidStringInputException("Ошибка: вы ничего не ввели!");
                 }
                 return input;
+
             } catch (InvalidStringInputException e) {
                 System.out.println(e.getMessage());
             }
@@ -168,48 +189,54 @@ public class TaskManager {
     }
 
     private void addTask() {
-        try {
-            System.out.print("Название: ");
-            String title = scanner.nextLine();
+        System.out.println("Добавление новой задачи:\n");
 
-            System.out.print("Описание: ");
-            String desc = scanner.nextLine();
+        String title = enterString("Введите название задачи: ");
+        String desc = enterString("Введите описание задачи: ");
 
-            LocalDate date;
-            while (true) {
-                System.out.print("Дата завершения (дд.мм.гггг): ");
-                String input = scanner.nextLine();
-                try {
-                    date = LocalDate.parse(input, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-                    if (date.isBefore(LocalDate.now())) {
-                        System.out.println("Дата в прошлом! Повторите.");
-                        continue;
-                    }
-                    break;
-                } catch (DateTimeParseException e) {
-                    System.out.println("Неверный формат!");
-                }
-            }
 
-            Task.Priority priority;
-            while (true) {
-                System.out.print("Приоритет (низкий/средний/высокий): ");
-                String input = scanner.nextLine().toUpperCase();
-                try {
-                    priority = Task.Priority.valueOf(input);
-                    break;
-                } catch (IllegalArgumentException e) {
-                    System.out.println("Неверный приоритет!");
-                }
-            }
-
-            tasks.add(new Task(title, desc, date, priority));
-            saveTasks();
-            System.out.println("Задача добавлена!");
-
-        } catch (Exception e) {
-            System.out.println("Ошибка: " + e.getMessage());
-        }
+//        try {
+//            System.out.print("Название: ");
+//            String title = scanner.nextLine();
+//
+//            System.out.print("Описание: ");
+//            String desc = scanner.nextLine();
+//
+//            LocalDate date;
+//            while (true) {
+//                System.out.print("Дата завершения (дд.мм.гггг): ");
+//                String input = scanner.nextLine();
+//                try {
+//                    date = LocalDate.parse(input, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+//                    if (date.isBefore(LocalDate.now())) {
+//                        System.out.println("Дата в прошлом! Повторите.");
+//                        continue;
+//                    }
+//                    break;
+//                } catch (DateTimeParseException e) {
+//                    System.out.println("Неверный формат!");
+//                }
+//            }
+//
+//            Task.Priority priority;
+//            while (true) {
+//                System.out.print("Приоритет (низкий/средний/высокий): ");
+//                String input = scanner.nextLine().toUpperCase();
+//                try {
+//                    priority = Task.Priority.valueOf(input);
+//                    break;
+//                } catch (IllegalArgumentException e) {
+//                    System.out.println("Неверный приоритет!");
+//                }
+//            }
+//
+//            tasks.add(new Task(title, desc, date, priority));
+//            saveTasks();
+//            System.out.println("Задача добавлена!");
+//
+//        } catch (Exception e) {
+//            System.out.println("Ошибка: " + e.getMessage());
+//        }
     }
 
     private void changeStatus() {
