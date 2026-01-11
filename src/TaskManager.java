@@ -1,6 +1,8 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import exceptions.InvalidMenuChoiceException;
+
 import java.io.*;
 import java.lang.reflect.Type;
 import java.time.LocalDate;
@@ -11,6 +13,7 @@ import java.util.stream.Collectors;
 
 public class TaskManager {
     private List<Task> tasks = new ArrayList<>();
+    private Comparator<Task> currentComparator = Comparator.comparing(Task::getPriority).reversed();
     private Scanner scanner = new Scanner(System.in);
     private Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class, new com.google.gson.JsonSerializer<LocalDate>() {
@@ -50,7 +53,7 @@ public class TaskManager {
                 int choice = Integer.parseInt(scanner.nextLine());
 
                 switch (choice) {
-                    case 1 -> displayTasks(tasks);
+                    case 1 -> displayTasks();
                     case 2 -> addTask();
                     case 3 -> changeStatus();
                     case 4 -> changeDescription();
@@ -67,6 +70,12 @@ public class TaskManager {
                 System.out.println("Введите число от 1 до 8.");
             }
         }
+    }
+
+    private List<Task> getSortedTasks() {
+        return tasks.stream()
+                .sorted(currentComparator)
+                .toList();
     }
 
     private void loadTasks() {
@@ -93,6 +102,15 @@ public class TaskManager {
             return;
         }
         taskList.forEach(System.out::print);
+    }
+
+    private void displayTasks() {
+        List<Task> sortedTask = getSortedTasks();
+        if (sortedTask.isEmpty()) {
+            System.out.println("Список пуст");
+            return;
+        }
+        sortedTask.forEach(System.out::print);
     }
 
     private void addTask() {
@@ -142,7 +160,7 @@ public class TaskManager {
     }
 
     private void changeStatus() {
-        displayTasks(tasks);
+        displayTasks();
         System.out.print("ID задачи: ");
         try {
             int id = Integer.parseInt(scanner.nextLine());
@@ -177,7 +195,7 @@ public class TaskManager {
     }
 
     private void changeDescription() {
-        displayTasks(tasks);
+        displayTasks();
         System.out.print("ID задачи: ");
         try {
             int id = Integer.parseInt(scanner.nextLine());
@@ -200,7 +218,7 @@ public class TaskManager {
     }
 
     private void deleteTask() {
-        displayTasks(tasks);
+        displayTasks();
         System.out.print("ID задачи для удаления: ");
         try {
             int id = Integer.parseInt(scanner.nextLine());
@@ -226,25 +244,40 @@ public class TaskManager {
     }
 
     private void sortTasks() {
-        System.out.println("1. Приоритет 2. Дата создания 3. Название 4. Дата завершения");
-        try {
-            int choice = Integer.parseInt(scanner.nextLine());
-            Comparator<Task> comparator = switch (choice) {
-                case 1 -> (a,b) -> b.getPriority().ordinal() - a.getPriority().ordinal();
-                case 2 -> Comparator.comparing(Task::getCreateDate);
-                case 3 -> Comparator.comparing(Task::getTitle);
-                case 4 -> Comparator.comparing(Task::getCompletionDate);
-                default -> (a,b) -> 0;
-            };
-            tasks.sort(comparator);
-            displayTasks(tasks);
-        } catch (NumberFormatException e) {
-            System.out.println("Неверный ввод!");
+        System.out.println("\t1. Приоритет " +
+                "\n\t2. Дата создания " +
+                "\n\t3. Название " +
+                "\n\t4. Дата завершения");
+        boolean sortingChosen = false;
+        while (!sortingChosen) {
+            try {
+                int choice = Integer.parseInt(scanner.nextLine());
+
+                currentComparator = switch (choice) {
+                    case 1 -> Comparator.comparing(Task::getPriority).reversed();
+                    case 2 -> Comparator.comparing(Task::getCreateDate);
+                    case 3 -> Comparator.comparing(Task::getTitle);
+                    case 4 -> Comparator.comparing(Task::getCompletionDate);
+                    default -> throw new InvalidMenuChoiceException("Ошибка: номер сортировки должен быть от 1 до 4!");
+                };
+
+                System.out.println("Сортировка изменена!");
+                displayTasks();
+                sortingChosen = true;
+
+            } catch (NumberFormatException e) {
+                System.out.println("Неверный ввод!");
+            } catch (InvalidMenuChoiceException e) {
+                System.out.println(e.getMessage());
+            }
         }
+
     }
 
     private void filterTasks() {
-        System.out.println("1. По приоритету 2. По статусу 3. Просроченные");
+        System.out.println("\t1. По приоритету " +
+                "\n\t2. По статусу " +
+                "\n\t3. Просроченные");
         try {
             int choice = Integer.parseInt(scanner.nextLine());
             List<Task> filtered = switch (choice) {
