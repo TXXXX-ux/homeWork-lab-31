@@ -1,3 +1,7 @@
+package models;
+
+import utils.LocalizedLabels;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -47,7 +51,7 @@ public class Task {
         return String.format(
                 "ID: %d | %s%s\n   Приоритет: %s | Статус: %s\n   Создана: %s | Завершить до: %s\n   Описание: %s\n%s\n",
                 id, title, isOverdue() ? "просрочено" : "",
-                priority, status,
+                LocalizedLabels.PRIORITY_REVERSE.get(priority), LocalizedLabels.STATUS_REVERSE.get(status),
                 createDate.format(DATE_FORMAT), completionDate.format(DATE_FORMAT),
                 description, "-".repeat(50)
         );

@@ -1,5 +1,7 @@
 package utils;
 
+import models.Task;
+
 import java.util.Map;
 
 public class LocalizedLabels {

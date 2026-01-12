@@ -1,3 +1,5 @@
+package models;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -11,7 +13,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TaskManager {
     private List<Task> tasks = new ArrayList<>();
@@ -234,8 +235,6 @@ public class TaskManager {
 
     private void changeStatus() {
         displayTasks();
-        System.out.print("Введите ID задачи: ");
-
         int id = enterInt("Введите ID задачи: ", 1, getMaxId());
 
         tasks.stream()
