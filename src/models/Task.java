@@ -5,12 +5,17 @@ import utils.LocalizedLabels;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+import models.state.*;
+
 public class Task {
     public enum Status { NEW, IN_PROGRESS, DONE }
     public enum Priority { LOW, MEDIUM, HIGH }
 
     private static int nextId = 1;
     public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+    private TaskState state;
+    private boolean deleted = false;
 
     private int id;
     private String title;
@@ -28,6 +33,7 @@ public class Task {
         this.createDate = LocalDate.now();
         this.priority = priority;
         this.status = Status.NEW;
+        this.state = new NewState();
     }
 
     public Task(int id, String title, String description, LocalDate completionDate,
@@ -40,6 +46,7 @@ public class Task {
         this.createDate = createDate;
         this.priority = priority;
         this.status = status;
+        this.state = new NewState();
     }
 
     public boolean isOverdue() {
