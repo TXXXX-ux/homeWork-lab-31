@@ -14,6 +14,8 @@ public class Task {
     private static int nextId = 1;
     public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
+    private Integer rating;
+
     private TaskState state;
     private boolean deleted = false;
 
@@ -47,6 +49,17 @@ public class Task {
         this.priority = priority;
         this.status = status;
         this.state = new NewState();
+    }
+
+    public void rate(int value) {
+        if (status != Status.DONE)
+            throw new IllegalStateException("Оценка возможна только после завершения");
+        if (rating != null)
+            throw new IllegalStateException("Оценка уже выставлена");
+        if (value < 1 || value > 5)
+            throw new IllegalArgumentException("Оценка от 1 до 5");
+
+        this.rating = value;
     }
 
     public boolean isOverdue() {
@@ -87,6 +100,10 @@ public class Task {
 
     public boolean isDeleted() {
         return deleted;
+    }
+
+    public Integer getRating() {
+        return rating;
     }
 
     public int getId() { return id; }
