@@ -229,28 +229,17 @@ public class TaskManager {
         int id = enterInt("Введите ID задачи: ", 1, getMaxId());
 
         tasks.stream()
-                    .filter(t -> t.getId() == id)
-                    .findFirst()
-                    .ifPresentOrElse(task -> {
-                        System.out.println("Текущий статус: " + task.getStatus());
-                        switch (task.getStatus()) {
-                            case NEW -> {
-                                if (enterConfirmation("Перевести в работу?")) {
-                                    task.setStatus(Task.Status.IN_PROGRESS);
-                                    saveTasks();
-                                    System.out.println("Статус обновлен!");
-                                }
-                            }
-                            case IN_PROGRESS -> {
-                                if (enterConfirmation("Отметить выполненной?")) {
-                                    task.setStatus(Task.Status.DONE);
-                                    saveTasks();
-                                    System.out.println("Задача выполнена!");
-                                }
-                            }
-                            case DONE -> System.out.println("Задача уже выполнена!");
-                        }
-                    }, () -> System.out.println("Задача не найдена!"));
+                .filter(t -> t.getId() == id)
+                .findFirst()
+                .ifPresentOrElse(task -> {
+                    try {
+                        task.changeStatus();
+                        saveTasks();
+                        System.out.println("Статус изменён");
+                    } catch (IllegalStateException e) {
+                        System.out.println(e.getMessage());
+                    }
+                }, () -> System.out.println("Задача не найдена!"));
     }
 
     private void changeDescription() {
@@ -261,37 +250,34 @@ public class TaskManager {
                 .filter(t -> t.getId() == id)
                 .findFirst()
                 .ifPresentOrElse(task -> {
-                    if (task.getStatus() != Task.Status.NEW) {
-                        System.out.println("Можно менять только у новых задач!");
-                        return;
+                    try {
+                        System.out.print("Новое описание: ");
+                        task.changeDescriptionState(scanner.nextLine());
+                        saveTasks();
+                        System.out.println("Описание обновлено");
+                    } catch (IllegalStateException e) {
+                        System.out.println(e.getMessage());
                     }
-                    System.out.print("Новое описание: ");
-                    task.setDescription(scanner.nextLine());
-                    saveTasks();
-                    System.out.println("Описание обновлено!");
-                }, () -> System.out.println("Задача не найдена"));
+                }, () -> System.out.println("Задача не найдена!"));
     }
 
     private void deleteTask() {
         displayTasks();
         int id = enterInt("Введите ID задачи: ", 1, getMaxId());
 
-        Optional<Task> taskOpt = tasks.stream()
+        tasks.stream()
                 .filter(t -> t.getId() == id)
-                .findFirst();
-
-        if (taskOpt.isPresent()) {
-            Task task = taskOpt.get();
-            if (task.getStatus() != Task.Status.NEW) {
-                System.out.println("Можно удалять только новые задачи!");
-                return;
-            }
-            tasks.remove(task);
-            saveTasks();
-            System.out.println("Задача удалена!");
-        } else {
-            System.out.println("Задача не найдена!");
-        }
+                .findFirst()
+                .ifPresentOrElse(task -> {
+                    try {
+                        task.deleteState();
+                        tasks.removeIf(Task::isDeleted);
+                        saveTasks();
+                        System.out.println("Задача удалена");
+                    } catch (IllegalStateException e) {
+                        System.out.println(e.getMessage());
+                    }
+                }, () -> System.out.println("Задача не найдена!"));
     }
 
     private int getMaxId() {

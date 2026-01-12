@@ -64,6 +64,31 @@ public class Task {
         );
     }
 
+    public void changeStatus() {
+        state.changeStatus(this);
+    }
+
+    public void changeDescriptionState(String desc) {
+        state.changeDescription(this, desc);
+    }
+
+    public void deleteState() {
+        state.delete(this);
+    }
+
+    public void setState(TaskState state) {
+        this.state = state;
+        this.status = Status.valueOf(state.getName());
+    }
+
+    public void markDeleted() {
+        this.deleted = true;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
     public int getId() { return id; }
     public String getTitle() { return title; }
     public String getDescription() { return description; }
