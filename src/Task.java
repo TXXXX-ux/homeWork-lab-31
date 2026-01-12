@@ -2,8 +2,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class Task {
-    enum Status { NEW, IN_PROGRESS, DONE }
-    enum Priority { LOW, MEDIUM, HIGH }
+    public enum Status { NEW, IN_PROGRESS, DONE }
+    public enum Priority { LOW, MEDIUM, HIGH }
 
     private static int nextId = 1;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
