@@ -1,8 +1,6 @@
 package models;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import utils.FileUtil;
 import exceptions.InvalidMenuChoiceException;
 import exceptions.InvalidStringInputException;
 import utils.LocalizedLabels;
@@ -18,21 +16,6 @@ public class TaskManager {
     private List<Task> tasks = new ArrayList<>();
     private Comparator<Task> currentComparator = Comparator.comparing(Task::getPriority).reversed();
     private Scanner scanner = new Scanner(System.in);
-    private Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDate.class, new com.google.gson.JsonSerializer<LocalDate>() {
-                public com.google.gson.JsonElement serialize(LocalDate date, java.lang.reflect.Type type,
-                                                             com.google.gson.JsonSerializationContext context) {
-                    return new com.google.gson.JsonPrimitive(date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
-                }
-            })
-            .registerTypeAdapter(LocalDate.class, new com.google.gson.JsonDeserializer<LocalDate>() {
-                public LocalDate deserialize(com.google.gson.JsonElement json, java.lang.reflect.Type type,
-                                             com.google.gson.JsonDeserializationContext context) throws com.google.gson.JsonParseException {
-                    return LocalDate.parse(json.getAsString(), DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-                }
-            })
-            .setPrettyPrinting()
-            .create();
 
     private void showMenu() {
         System.out.println("Меню");
@@ -61,7 +44,7 @@ public class TaskManager {
                 case 4 -> changeDescription();
                 case 5 -> deleteTask();
                 case 6 -> sortTasks();
-                case 7 -> filterTasks();
+
                 case 8 -> {
                     saveTasks();
                     return;
@@ -181,21 +164,17 @@ public class TaskManager {
     }
 
     private void loadTasks() {
-        try (Reader reader = new FileReader("tasks.json")) {
-            Type listType = new TypeToken<List<Task>>(){}.getType();
-            tasks = gson.fromJson(reader, listType);
-            if (tasks == null) tasks = new ArrayList<>();
+        tasks = FileUtil.readTasks();
+        if (tasks.isEmpty()) {
+            System.out.println("Файл задач пуст или все задачи некорректны!\nСоздайте новую задачу.\n");
+            addTask();
+        } else {
             System.out.println("Загружено задач: " + tasks.size());
-        } catch (IOException e) {
         }
     }
 
     private void saveTasks() {
-        try (Writer writer = new FileWriter("tasks.json")) {
-            gson.toJson(tasks, writer);
-        } catch (IOException e) {
-            System.out.println("Ошибка сохранения: " + e.getMessage());
-        }
+        FileUtil.writeTasks(tasks);
     }
 
     private void displayTasks(List<Task> taskList) {
@@ -216,7 +195,7 @@ public class TaskManager {
     }
 
     private void addTask() {
-        System.out.println("Добавление новой задачи:\n");
+        System.out.println("=== Добавление новой задачи ===");
 
         String title = enterString("Введите название задачи: ");
         String desc = enterString("Введите описание задачи: ");
@@ -327,30 +306,6 @@ public class TaskManager {
 
         System.out.println("Сортировка изменена!");
         displayTasks();
-    }
-
-    private void filterTasks() {
-        System.out.println("\t1. По приоритету " +
-                "\n\t2. По статусу " +
-                "\n\t3. Просроченные");
-
-        int choice = enterInt("Выберите фильтр: ", 1, 3);
-        List<Task> filtered = switch (choice) {
-            case 1 -> tasks.stream()
-                        .filter(t -> t.getPriority() == enterPriority())
-                        .toList();
-            case 2 -> tasks.stream()
-                        .filter(t -> t.getStatus() == enterStatus())
-                        .toList();
-            case 3 -> tasks.stream()
-                        .filter(Task::isOverdue)
-                        .toList();
-            default -> new ArrayList<>();
-        };
-
-        displayTasks(filtered.stream()
-                .sorted(currentComparator)
-                .toList());
     }
 
 }
