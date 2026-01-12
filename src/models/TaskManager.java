@@ -44,7 +44,7 @@ public class TaskManager {
                 case 4 -> changeDescription();
                 case 5 -> deleteTask();
                 case 6 -> sortTasks();
-
+                case 7 -> filterTasks();
                 case 8 -> {
                     saveTasks();
                     return;
@@ -306,6 +306,53 @@ public class TaskManager {
 
         System.out.println("Сортировка изменена!");
         displayTasks();
+    }
+
+    private void filterTasks() {
+        System.out.println("\t1. По приоритету " +
+                "\n\t2. По статусу " +
+                "\n\t3. Просроченные");
+
+        int choice = enterInt("Выберите фильтр: ", 1, 3);
+
+        List<Task> filtered = new ArrayList<>();
+
+        switch (choice) {
+            case 1 -> {
+                Task.Priority priority = enterPriority();
+                filtered = tasks.stream()
+                        .filter(t -> t.getPriority() == priority)
+                        .toList();
+                if (filtered.isEmpty()) {
+                    System.out.println("Нет задач с таким приоритетом!");
+                    return;
+                }
+            }
+            case 2 -> {
+                Task.Status status = enterStatus();
+                filtered = tasks.stream()
+                        .filter(t -> t.getStatus() == status)
+                        .toList();
+                if (filtered.isEmpty()) {
+                    System.out.println("Нет задач с таким статусом!");
+                    return;
+                }
+            }
+            case 3 -> {
+                filtered = tasks.stream()
+                        .filter(Task::isOverdue)
+                        .toList();
+                if (filtered.isEmpty()) {
+                    System.out.println("Нет просроченных задач!");
+                    return;
+                }
+            }
+            default -> System.out.println("Неверный выбор фильтра");
+        };
+
+        displayTasks(filtered.stream()
+                .sorted(currentComparator)
+                .toList());
     }
 
 }
