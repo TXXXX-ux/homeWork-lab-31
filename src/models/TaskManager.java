@@ -5,8 +5,6 @@ import exceptions.InvalidMenuChoiceException;
 import exceptions.InvalidStringInputException;
 import utils.LocalizedLabels;
 
-import java.io.*;
-import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -26,7 +24,8 @@ public class TaskManager {
         System.out.println("5.Удалить задачу");
         System.out.println("6.Сортировать");
         System.out.println("7.Фильтровать");
-        System.out.println("8.Выйти");
+        System.out.println("8.Поиск по критериям");
+        System.out.println("9.Выйти");
     }
 
     public void run() {
@@ -35,7 +34,7 @@ public class TaskManager {
         while (true) {
             showMenu();
 
-            int choice = enterInt("Выберите действие: ", 1, 8);
+            int choice = enterInt("Выберите действие: ", 1, 9);
 
             switch (choice) {
                 case 1 -> displayTasks();
@@ -45,7 +44,8 @@ public class TaskManager {
                 case 5 -> deleteTask();
                 case 6 -> sortTasks();
                 case 7 -> filterTasks();
-                case 8 -> {
+                case 8 -> searchTasks();
+                case 9 -> {
                     saveTasks();
                     return;
                 }
@@ -68,6 +68,18 @@ public class TaskManager {
                 }
             } catch (InvalidStringInputException e) {
                 System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    private LocalDate enterAnyDate(String message) {
+        while (true) {
+            try {
+                System.out.print(message);
+                String input = scanner.nextLine();
+                return LocalDate.parse(input, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            } catch (DateTimeParseException e) {
+                System.out.println("Ошибка: неверный формат даты! Используйте дд.мм.гггг\n");
             }
         }
     }
@@ -306,6 +318,75 @@ public class TaskManager {
 
         System.out.println("Сортировка изменена!");
         displayTasks();
+    }
+
+    private void searchTasks() {
+        System.out.println("=== Поиск задач ===" +
+                "\n\t1. По ключевому слову в названии/описании" +
+                "\n\t2. По дате (или диапазону дат/месяцу)" +
+                "\n\t3. По приоритету");
+
+        int choice = enterInt("Выберите критерий поиска: ", 1, 3);
+        List<Task> results = new ArrayList<>();
+
+        switch (choice) {
+            case 1 -> {
+                String keyword = enterString("Введите ключевое слово: ").toLowerCase();
+                results = tasks.stream()
+                        .filter(task -> task.getTitle().toLowerCase().contains(keyword)
+                                || task.getDescription().toLowerCase().contains(keyword))
+                        .toList();
+                if (results.isEmpty()) {
+                    System.out.println("Нет задач, содержащих это слово!");
+                }
+            }
+            case 2 -> {
+                System.out.println("1. По конкретной дате" +
+                        "\n2. По диапазону дат" +
+                        "\n3. По месяцу");
+                int dateChoice = enterInt("Выберите вариант: ", 1, 3);
+                switch (dateChoice) {
+                    case 1 -> {
+                        LocalDate date = enterAnyDate("Введите дату (дд.мм.гггг): ");
+                        results = tasks.stream()
+                                .filter(task -> task.getCompletionDate().isEqual(date))
+                                .toList();
+                    }
+                    case 2 -> {
+                        LocalDate start = enterAnyDate("Введите начальную дату (дд.мм.гггг): ");
+                        LocalDate end = enterAnyDate("Введите конечную дату (дд.мм.гггг): ");
+                        results = tasks.stream()
+                                .filter(task -> !task.getCompletionDate().isBefore(start) &&
+                                        !task.getCompletionDate().isAfter(end))
+                                .toList();
+                    }
+                    case 3 -> {
+                        int month = enterInt("Введите месяц (1-12): ", 1, 12);
+                        int year = enterInt("Введите год: ", 1900, 3000);
+                        results = tasks.stream()
+                                .filter(t -> t.getCompletionDate().getMonthValue() == month &&
+                                        t.getCompletionDate().getYear() == year)
+                                .toList();
+                    }
+                }
+                if (results.isEmpty()) System.out.println("Задачи за выбранный период не найдены!");
+            }
+            case 3 -> {
+                Task.Priority priority = enterPriority();
+                results = tasks.stream()
+                        .filter(task -> task.getPriority() == priority)
+                        .toList();
+                if (results.isEmpty()) {
+                    System.out.println("Нет задач с таким приоритетом!");
+                }
+            }
+        }
+        if (!results.isEmpty()) {
+            System.out.println("Найденные задачи:");
+            displayTasks(results.stream()
+                    .sorted(currentComparator)
+                    .toList());
+        }
     }
 
     private void filterTasks() {
