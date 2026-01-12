@@ -16,7 +16,7 @@ public class Task {
 
     private Integer rating;
 
-    private TaskState state;
+    private transient TaskState state;
     private boolean deleted = false;
 
     private int id;
