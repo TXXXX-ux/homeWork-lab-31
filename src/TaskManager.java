@@ -3,6 +3,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import exceptions.InvalidMenuChoiceException;
 import exceptions.InvalidStringInputException;
+import utils.LocalizedLabels;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -127,10 +128,13 @@ public class TaskManager {
         while (true) {
             try {
                 System.out.print("Введите приоритет (низкий/средний/высокий): ");
-                String input = scanner.nextLine().toUpperCase();
-                return Task.Priority.valueOf(input);
-            } catch (IllegalArgumentException e) {
-                System.out.println("Ошибка: допустимые значения: НИЗКИЙ, СРЕДНИЙ, ВЫСОКИЙ\n");
+                String input = scanner.nextLine().strip().toLowerCase();
+                Task.Priority priority = LocalizedLabels.PRIORITY_MAP.get(input);
+
+                if (priority == null) throw new InvalidStringInputException("Ошибка: допустимые значения: низкий, средний, высокий\n");
+                return priority;
+            } catch (InvalidStringInputException e) {
+                System.out.println(e.getMessage());
             }
         }
     }
@@ -138,11 +142,14 @@ public class TaskManager {
     private Task.Status enterStatus() {
         while (true) {
             try {
-                System.out.print("Введите статус (new/in_progress/done): ");
-                String input = scanner.nextLine().toUpperCase();
-                return Task.Status.valueOf(input);
-            } catch (IllegalArgumentException e) {
-                System.out.println("Ошибка: допустимые значения: NEW, IN_PROGRESS, DONE\n");
+                System.out.print("Введите статус (новая/в работе/сделано): ");
+                String input = scanner.nextLine().strip().toLowerCase();
+                Task.Status status = LocalizedLabels.STATUS_MAP.get(input);
+
+                if (status == null) throw new InvalidStringInputException("Ошибка: допустимые значения: новая, в работе, сделано\n");
+                return status;
+            } catch (InvalidStringInputException e) {
+                System.out.println(e.getMessage());
             }
         }
     }
