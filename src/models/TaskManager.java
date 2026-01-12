@@ -25,7 +25,8 @@ public class TaskManager {
         System.out.println("6.Сортировать");
         System.out.println("7.Фильтровать");
         System.out.println("8.Поиск по критериям");
-        System.out.println("9.Выйти");
+        System.out.println("9.Дать оценку задаче");
+        System.out.println("10.Выйти");
     }
 
     public void run() {
@@ -34,7 +35,7 @@ public class TaskManager {
         while (true) {
             showMenu();
 
-            int choice = enterInt("Выберите действие: ", 1, 9);
+            int choice = enterInt("Выберите действие: ", 1, 10);
 
             switch (choice) {
                 case 1 -> displayTasks();
@@ -45,7 +46,8 @@ public class TaskManager {
                 case 6 -> sortTasks();
                 case 7 -> filterTasks();
                 case 8 -> searchTasks();
-                case 9 -> {
+                case 9 -> rateTask();
+                case 10 -> {
                     saveTasks();
                     return;
                 }
@@ -229,28 +231,17 @@ public class TaskManager {
         int id = enterInt("Введите ID задачи: ", 1, getMaxId());
 
         tasks.stream()
-                    .filter(t -> t.getId() == id)
-                    .findFirst()
-                    .ifPresentOrElse(task -> {
-                        System.out.println("Текущий статус: " + task.getStatus());
-                        switch (task.getStatus()) {
-                            case NEW -> {
-                                if (enterConfirmation("Перевести в работу?")) {
-                                    task.setStatus(Task.Status.IN_PROGRESS);
-                                    saveTasks();
-                                    System.out.println("Статус обновлен!");
-                                }
-                            }
-                            case IN_PROGRESS -> {
-                                if (enterConfirmation("Отметить выполненной?")) {
-                                    task.setStatus(Task.Status.DONE);
-                                    saveTasks();
-                                    System.out.println("Задача выполнена!");
-                                }
-                            }
-                            case DONE -> System.out.println("Задача уже выполнена!");
-                        }
-                    }, () -> System.out.println("Задача не найдена!"));
+                .filter(t -> t.getId() == id)
+                .findFirst()
+                .ifPresentOrElse(task -> {
+                    try {
+                        task.changeStatus();
+                        saveTasks();
+                        System.out.println("Статус изменён");
+                    } catch (IllegalStateException e) {
+                        System.out.println(e.getMessage());
+                    }
+                }, () -> System.out.println("Задача не найдена!"));
     }
 
     private void changeDescription() {
@@ -261,37 +252,53 @@ public class TaskManager {
                 .filter(t -> t.getId() == id)
                 .findFirst()
                 .ifPresentOrElse(task -> {
-                    if (task.getStatus() != Task.Status.NEW) {
-                        System.out.println("Можно менять только у новых задач!");
-                        return;
+                    try {
+                        System.out.print("Новое описание: ");
+                        task.changeDescriptionState(scanner.nextLine());
+                        saveTasks();
+                        System.out.println("Описание обновлено");
+                    } catch (IllegalStateException e) {
+                        System.out.println(e.getMessage());
                     }
-                    System.out.print("Новое описание: ");
-                    task.setDescription(scanner.nextLine());
-                    saveTasks();
-                    System.out.println("Описание обновлено!");
-                }, () -> System.out.println("Задача не найдена"));
+                }, () -> System.out.println("Задача не найдена!"));
     }
 
     private void deleteTask() {
         displayTasks();
         int id = enterInt("Введите ID задачи: ", 1, getMaxId());
 
-        Optional<Task> taskOpt = tasks.stream()
+        tasks.stream()
                 .filter(t -> t.getId() == id)
-                .findFirst();
+                .findFirst()
+                .ifPresentOrElse(task -> {
+                    try {
+                        task.deleteState();
+                        tasks.removeIf(Task::isDeleted);
+                        saveTasks();
+                        System.out.println("Задача удалена");
+                    } catch (IllegalStateException e) {
+                        System.out.println(e.getMessage());
+                    }
+                }, () -> System.out.println("Задача не найдена!"));
+    }
 
-        if (taskOpt.isPresent()) {
-            Task task = taskOpt.get();
-            if (task.getStatus() != Task.Status.NEW) {
-                System.out.println("Можно удалять только новые задачи!");
-                return;
-            }
-            tasks.remove(task);
-            saveTasks();
-            System.out.println("Задача удалена!");
-        } else {
-            System.out.println("Задача не найдена!");
-        }
+    private void rateTask() {
+        displayTasks();
+        int id = enterInt("ID задачи: ", 1, getMaxId());
+
+        tasks.stream()
+                .filter(t -> t.getId() == id)
+                .findFirst()
+                .ifPresentOrElse(task -> {
+                    try {
+                        int rating = enterInt("Оценка (1-5): ", 1, 5);
+                        task.rate(rating);
+                        saveTasks();
+                        System.out.println("Оценка сохранена");
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                }, () -> System.out.println("Задача не найдена"));
     }
 
     private int getMaxId() {
