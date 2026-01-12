@@ -10,7 +10,7 @@ public class Task {
     public enum Priority { LOW, MEDIUM, HIGH }
 
     private static int nextId = 1;
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private int id;
     private String title;
