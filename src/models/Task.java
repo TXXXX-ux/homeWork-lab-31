@@ -69,11 +69,17 @@ public class Task {
     @Override
     public String toString() {
         return String.format(
-                "ID: %d | %s%s\n   Приоритет: %s | Статус: %s\n   Создана: %s | Завершить до: %s\n   Описание: %s\n%s\n",
-                id, title, isOverdue() ? "просрочено" : "",
-                LocalizedLabels.PRIORITY_REVERSE.get(priority), LocalizedLabels.STATUS_REVERSE.get(status),
-                createDate.format(DATE_FORMAT), completionDate.format(DATE_FORMAT),
-                description, "-".repeat(50)
+                "ID: %d | %s%s\n   Приоритет: %s | Статус: %s\n   Создана: %s | Завершить до: %s\n   Описание: %s%s\n%s\n",
+                id,
+                title,
+                isOverdue() ? "просрочено" : "",
+                LocalizedLabels.PRIORITY_REVERSE.get(priority),
+                LocalizedLabels.STATUS_REVERSE.get(status),
+                createDate.format(DATE_FORMAT),
+                completionDate.format(DATE_FORMAT),
+                description,
+                ratingToString(),
+                "-".repeat(50)
         );
     }
 
@@ -118,4 +124,12 @@ public class Task {
         if (status == Status.NEW) this.description = description;
     }
     public void setStatus(Status status) { this.status = status; }
+
+    private String ratingToString() {
+        if (rating == null) {
+            return "";
+        }
+        return "\n   Оценка: " + rating + "/5";
+    }
+
 }
