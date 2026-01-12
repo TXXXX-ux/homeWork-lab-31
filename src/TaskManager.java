@@ -68,6 +68,25 @@ public class TaskManager {
         }
     }
 
+    private boolean enterConfirmation(String message) {
+        while (true) {
+            try {
+                System.out.print(message + " (да/нет): ");
+                String input = scanner.nextLine().trim().toLowerCase();
+
+                if (input.equals("да")) {
+                    return true;
+                } else if (input.equals("нет")) {
+                    return false;
+                } else {
+                    throw new InvalidStringInputException("Ошибка: введите 'да' или 'нет'!\n");
+                }
+            } catch (InvalidStringInputException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
     private LocalDate enterDate(String message) {
         while (true) {
             try {
@@ -200,31 +219,33 @@ public class TaskManager {
 
         tasks.add(new Task(title, desc, date, priority));
         saveTasks();
-        System.out.println("Задача добавлена!");
+        System.out.println("Задача добавлена!\nОбновленный список задач: ");
+
+        currentComparator = Comparator.comparing(Task::getPriority).reversed();
+        displayTasks();
     }
 
     private void changeStatus() {
         displayTasks();
-        System.out.print("ID задачи: ");
-        try {
-            int id = Integer.parseInt(scanner.nextLine());
-            tasks.stream()
+        System.out.print("Введите ID задачи: ");
+
+        int id = enterInt("Введите ID задачи: ", 1, getMaxId());
+
+        tasks.stream()
                     .filter(t -> t.getId() == id)
                     .findFirst()
                     .ifPresentOrElse(task -> {
                         System.out.println("Текущий статус: " + task.getStatus());
                         switch (task.getStatus()) {
                             case NEW -> {
-                                System.out.print("Перевести в работу? (да/нет): ");
-                                if (scanner.nextLine().equalsIgnoreCase("да")) {
+                                if (enterConfirmation("Перевести в работу?")) {
                                     task.setStatus(Task.Status.IN_PROGRESS);
                                     saveTasks();
                                     System.out.println("Статус обновлен!");
                                 }
                             }
                             case IN_PROGRESS -> {
-                                System.out.print("Отметить выполненной? (да/нет): ");
-                                if (scanner.nextLine().equalsIgnoreCase("да")) {
+                                if (enterConfirmation("Отметить выполненной?")) {
                                     task.setStatus(Task.Status.DONE);
                                     saveTasks();
                                     System.out.println("Задача выполнена!");
@@ -232,59 +253,55 @@ public class TaskManager {
                             }
                             case DONE -> System.out.println("Задача уже выполнена!");
                         }
-                    }, () -> System.out.println("Задача не найдена"));
-        } catch (NumberFormatException e) {
-            System.out.println("Неверный ID!");
-        }
+                    }, () -> System.out.println("Задача не найдена!"));
     }
 
     private void changeDescription() {
         displayTasks();
-        System.out.print("ID задачи: ");
-        try {
-            int id = Integer.parseInt(scanner.nextLine());
-            tasks.stream()
-                    .filter(t -> t.getId() == id)
-                    .findFirst()
-                    .ifPresentOrElse(task -> {
-                        if (task.getStatus() != Task.Status.NEW) {
-                            System.out.println("Можно менять только у новых задач!");
-                            return;
-                        }
-                        System.out.print("Новое описание: ");
-                        task.setDescription(scanner.nextLine());
-                        saveTasks();
-                        System.out.println("Описание обновлено!");
-                    }, () -> System.out.println("Задача не найдена"));
-        } catch (NumberFormatException e) {
-            System.out.println("Неверный ID!");
-        }
+        int id = enterInt("Введите ID задачи: ", 1, getMaxId());
+
+        tasks.stream()
+                .filter(t -> t.getId() == id)
+                .findFirst()
+                .ifPresentOrElse(task -> {
+                    if (task.getStatus() != Task.Status.NEW) {
+                        System.out.println("Можно менять только у новых задач!");
+                        return;
+                    }
+                    System.out.print("Новое описание: ");
+                    task.setDescription(scanner.nextLine());
+                    saveTasks();
+                    System.out.println("Описание обновлено!");
+                }, () -> System.out.println("Задача не найдена"));
     }
 
     private void deleteTask() {
         displayTasks();
-        System.out.print("ID задачи для удаления: ");
-        try {
-            int id = Integer.parseInt(scanner.nextLine());
-            Optional<Task> taskOpt = tasks.stream()
-                    .filter(t -> t.getId() == id)
-                    .findFirst();
+        int id = enterInt("Введите ID задачи: ", 1, getMaxId());
 
-            if (taskOpt.isPresent()) {
-                Task task = taskOpt.get();
-                if (task.getStatus() != Task.Status.NEW) {
-                    System.out.println("Можно удалять только новые задачи!");
-                    return;
-                }
-                tasks.remove(task);
-                saveTasks();
-                System.out.println("Задача удалена!");
-            } else {
-                System.out.println("Задача не найдена!");
+        Optional<Task> taskOpt = tasks.stream()
+                .filter(t -> t.getId() == id)
+                .findFirst();
+
+        if (taskOpt.isPresent()) {
+            Task task = taskOpt.get();
+            if (task.getStatus() != Task.Status.NEW) {
+                System.out.println("Можно удалять только новые задачи!");
+                return;
             }
-        } catch (NumberFormatException e) {
-            System.out.println("Неверный ID!");
+            tasks.remove(task);
+            saveTasks();
+            System.out.println("Задача удалена!");
+        } else {
+            System.out.println("Задача не найдена!");
         }
+    }
+
+    private int getMaxId() {
+        return tasks.stream()
+                .mapToInt(Task::getId)
+                .max()
+                .orElse(0);
     }
 
     private void sortTasks() {
@@ -292,73 +309,42 @@ public class TaskManager {
                 "\n\t2. Дата создания " +
                 "\n\t3. Название " +
                 "\n\t4. Дата завершения");
-        boolean sortingChosen = false;
-        while (!sortingChosen) {
-            try {
-                int choice = Integer.parseInt(scanner.nextLine());
 
-                currentComparator = switch (choice) {
-                    case 1 -> Comparator.comparing(Task::getPriority).reversed();
-                    case 2 -> Comparator.comparing(Task::getCreateDate);
-                    case 3 -> Comparator.comparing(Task::getTitle);
-                    case 4 -> Comparator.comparing(Task::getCompletionDate);
-                    default -> throw new InvalidMenuChoiceException("Ошибка: номер сортировки должен быть от 1 до 4!");
-                };
+        int choice = enterInt("Выберите сортировку: ", 1, 4);
 
-                System.out.println("Сортировка изменена!");
-                displayTasks();
-                sortingChosen = true;
+        currentComparator = switch (choice) {
+            case 2 -> Comparator.comparing(Task::getCreateDate);
+            case 3 -> Comparator.comparing(Task::getTitle);
+            case 4 -> Comparator.comparing(Task::getCompletionDate);
+            default -> Comparator.comparing(Task::getPriority).reversed();
+        };
 
-            } catch (NumberFormatException e) {
-                System.out.println("Неверный ввод!");
-            } catch (InvalidMenuChoiceException e) {
-                System.out.println(e.getMessage());
-            }
-        }
-
+        System.out.println("Сортировка изменена!");
+        displayTasks();
     }
 
     private void filterTasks() {
         System.out.println("\t1. По приоритету " +
                 "\n\t2. По статусу " +
                 "\n\t3. Просроченные");
-        boolean filterChosen = false;
-        while (!filterChosen) {
-            try {
-                int choice = Integer.parseInt(scanner.nextLine());
-                List<Task> filtered = switch (choice) {
-                    case 1 -> {
-                        System.out.print("Приоритет (низкий/средний/высокий): ");
-                        Task.Priority p = Task.Priority.valueOf(scanner.nextLine().toUpperCase());
-                        yield tasks.stream()
-                                .filter(t -> t.getPriority() == p)
-                                .collect(Collectors.toList());
-                    }
-                    case 2 -> {
-                        System.out.print("Статус (new/in_progress/done): ");
-                        Task.Status s = Task.Status.valueOf(scanner.nextLine().toUpperCase());
-                        yield tasks.stream()
-                                .filter(t -> t.getStatus() == s)
-                                .collect(Collectors.toList());
-                    }
-                    case 3 -> tasks.stream()
-                            .filter(Task::isOverdue)
-                            .collect(Collectors.toList());
-                    default -> throw new InvalidMenuChoiceException(
-                            "Ошибка: номер фильтра должен быть от 1 до 3!");
-                };
 
-                displayTasks(filtered.stream()
-                        .sorted(currentComparator)
-                        .toList());
-                filterChosen = true;
+        int choice = enterInt("Выберите фильтр: ", 1, 3);
+        List<Task> filtered = switch (choice) {
+            case 1 -> tasks.stream()
+                        .filter(t -> t.getPriority() == enterPriority())
+                        .toList();
+            case 2 -> tasks.stream()
+                        .filter(t -> t.getStatus() == enterStatus())
+                        .toList();
+            case 3 -> tasks.stream()
+                        .filter(Task::isOverdue)
+                        .toList();
+            default -> new ArrayList<>();
+        };
 
-            } catch (NumberFormatException e) {
-                System.out.println("Ошибка: введите число!");
-            } catch (InvalidMenuChoiceException e) {
-                System.out.println(e.getMessage());
-            }
-        }
+        displayTasks(filtered.stream()
+                .sorted(currentComparator)
+                .toList());
     }
 
 }
