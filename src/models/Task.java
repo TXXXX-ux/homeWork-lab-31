@@ -48,7 +48,15 @@ public class Task {
         this.createDate = createDate;
         this.priority = priority;
         this.status = status;
-        this.state = new NewState();
+        this.state = resolveState(status);
+    }
+
+    private TaskState resolveState(Status status) {
+        return switch (status) {
+            case NEW -> new NewState();
+            case IN_PROGRESS -> new InProgressState();
+            case DONE -> new DoneState();
+        };
     }
 
     public void rate(int value) {
@@ -84,6 +92,9 @@ public class Task {
     }
 
     public void changeStatus() {
+        if (state == null) {
+            state = resolveState(status);
+        }
         state.changeStatus(this);
     }
 
